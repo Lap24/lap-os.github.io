@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JLAP OS - Modern Web Operating System</title>
+    <link href="https://cdn.tailwindcss.com/3.4.0" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary-color: #5D5CDE;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --taskbar-bg: rgba(0, 0, 0, 0.3);
+            --window-bg: rgba(255, 255, 255, 0.95);
+            --text-primary: #000;
+            --text-secondary: #666;
+        }
+
+        .dark {
+            --glass-bg: rgba(0, 0, 0, 0.3);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --taskbar-bg: rgba(0, 0, 0, 0.6);
+            --window-bg: rgba(30, 30, 30, 0.95);
+            --text-primary: #fff;
+            --text-secondary: #ccc;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-primary);
+        }
+
+        .desktop {
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><rect width="1920" height="1080" fill="%23667eea"/><circle cx="300" cy="200" r="100" fill="%23764ba2" opacity="0.3"/><circle cx="1600" cy="800" r="150" fill="%23667eea" opacity="0.5"/></svg>') center/cover;
+            background-attachment: fixed;
+        }
+
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: var(--taskbar-bg);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            z-index: 1000;
+        }
+
+        .start-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-right: 8px;
+        }
+
+        .start-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            height: 32px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 0 16px;
+            margin-right: 8px;
+            color: var(--text-primary);
+            backdrop-filter: blur(10px);
+        }
+
+        .search-box::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .taskbar-apps {
+            display: flex;
+            gap: 4px;
+            margin-right: auto;
+            margin-left: 16px;
+        }
+
+        .taskbar-app {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .taskbar-app:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .taskbar-app.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .system-tray {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+        }
+
+        .window {
+            position: absolute;
+            background: var(--window-bg);
+            border-radius: 8px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            overflow: hidden;
+            z-index: 100;
+            min-width: 300px;
+            min-height: 200px;
+        }
+
+        .window.maximized {
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: calc(100vh - 48px) !important;
+            border-radius: 0;
+        }
+
+        .window-header {
+            height: 32px;
+            background: var(--glass-bg);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            cursor: move;
+            user-select: none;
+        }
+
+        .window-title {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-control {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 10px;
+        }
+
+        .window-control:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .window-control.close:hover {
+            background: #e74c3c;
+        }
+
+        .window-content {
+            height: calc(100% - 32px);
+            overflow: auto;
+            padding: 16px;
+        }
+
+        .start-menu {
+            position: fixed;
+            bottom: 56px;
+            left: 8px;
+            width: 600px;
+            height: 640px;
+            background: var(--window-bg);
+            border-radius: 8px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            z-index: 2000;
+            padding: 24px;
+            display: none;
+        }
+
+        .start-menu.show {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .app-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--glass-bg);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid var(--glass-border);
+        }
+
+        .app-icon:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .app-icon i {
+            font-size: 24px;
+            margin-bottom: 4px;
+            color: var(--primary-color);
+        }
+
+        .app-name {
+            font-size: 11px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .context-menu {
+            position: fixed;
+            background: var(--window-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 8px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            z-index: 3000;
+            display: none;
+        }
+
+        .context-menu-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .context-menu-item:hover {
+            background: var(--glass-bg);
+        }
+
+        @media (max-width: 768px) {
+            .start-menu {
+                width: calc(100vw - 16px);
+                height: calc(100vh - 80px);
+                left: 8px;
+                right: 8px;
+            }
+            
+            .search-box {
+                max-width: 200px;
+            }
+            
+            .taskbar-apps {
+                display: none;
+            }
+        }
+
+        /* App-specific styles */
+        .browser-address-bar {
+            width: 100%;
+            height: 32px;
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 0 16px;
+            margin-bottom: 16px;
+            background: var(--glass-bg);
+            color: var(--text-primary);
+        }
+
+        .browser-content {
+            height: calc(100% - 48px);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            background: white;
+        }
+
+        .calculator {
+            width: 320px !important;
+            height: 480px !important;
+        }
+
+        .calc-display {
+            width: 100%;
+            height: 80px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 20px;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .calc-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            height: calc(100% - 96px);
+        }
+
+        .calc-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .calc-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .calc-btn.operator {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .notepad-editor {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: none;
+            padding: 0;
+        }
+
+        .file-explorer {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .file-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .file-list {
+            flex: 1;
+            overflow: auto;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-item:hover {
+            background: var(--glass-bg);
+        }
+
+        .file-icon {
+            width: 24px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="desktop" id="desktop">
+        <!-- Desktop Icons -->
+        <div class="absolute top-4 left-4 space-y-4">
+            <div class="app-icon cursor-pointer" onclick="openApp('file-explorer')">
+                <i class="fas fa-folder text-yellow-500"></i>
+                <div class="app-name text-white">This PC</div>
+            </div>
+        </div>
+
+        <!-- Windows Container -->
+        <div id="windows-container"></div>
+
+        <!-- Taskbar -->
+        <div class="taskbar">
+            <div class="start-button" onclick="toggleStartMenu()">
+                <img src="https://pfst.cf2.poecdn.net/base/image/d8e418a9774154ef2cad0786ceac2ff469d965276d14a3ca4a034e5c3f5250cc?w=100&h=100" alt="JLAP" style="width: 24px; height: 24px; border-radius: 4px;">
+            </div>
+            
+            <input type="text" class="search-box text-base" placeholder="Type here to search" onkeyup="handleSearch(event)">
+            
+            <div class="taskbar-apps" id="taskbar-apps">
+                <div class="taskbar-app" onclick="openApp('browser')">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <div class="taskbar-app" onclick="openApp('calculator')">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <div class="taskbar-app" onclick="openApp('notepad')">
+                    <i class="fas fa-sticky-note"></i>
+                </div>
+                <div class="taskbar-app" onclick="openApp('settings')">
+                    <i class="fas fa-cog"></i>
+                </div>
+            </div>
+            
+            <div class="system-tray">
+                <i class="fas fa-wifi cursor-pointer" onclick="showNetworkPanel()"></i>
+                <i class="fas fa-battery-three-quarters cursor-pointer"></i>
+                <div id="system-time" class="text-sm font-medium"></div>
+            </div>
+        </div>
+
+        <!-- Start Menu -->
+        <div class="start-menu" id="start-menu">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <i class="fas fa-user text-white"></i>
+                </div>
+                <div>
+                    <div class="font-semibold">User</div>
+                    <div class="text-sm opacity-70">Welcome to JLAP OS</div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <h3 class="text-sm font-semibold mb-3 opacity-70">Pinned</h3>
+                <div class="apps-grid" id="pinned-apps">
+                    <!-- Apps will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <div>
+                <h3 class="text-sm font-semibold mb-3 opacity-70">All Apps</h3>
+                <div class="apps-grid" id="all-apps">
+                    <!-- Apps will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Context Menu -->
+        <div class="context-menu" id="context-menu">
+            <div class="context-menu-item" onclick="refreshDesktop()">
+                <i class="fas fa-sync-alt mr-2"></i> Refresh
+            </div>
+            <div class="context-menu-item" onclick="openApp('settings')">
+                <i class="fas fa-cog mr-2"></i> Display settings
+            </div>
+            <div class="context-menu-item" onclick="openApp('file-explorer')">
+                <i class="fas fa-folder mr-2"></i> Open File Explorer
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme detection and handling
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // System state
+        let windowId = 0;
+        let activeWindows = new Map();
+        let draggedWindow = null;
+        let dragOffset = { x: 0, y: 0 };
+        let startMenuOpen = false;
+
+        // Apps database
+        const apps = {
+            'browser': {
+                name: 'JLAP Browser',
+                icon: 'fas fa-globe',
+                category: 'productivity',
+                pinned: true
+            },
+            'calculator': {
+                name: 'Calculator',
+                icon: 'fas fa-calculator',
+                category: 'utilities',
+                pinned: true
+            },
+            'notepad': {
+                name: 'Notepad',
+                icon: 'fas fa-sticky-note',
+                category: 'productivity',
+                pinned: true
+            },
+            'settings': {
+                name: 'Settings',
+                icon: 'fas fa-cog',
+                category: 'system',
+                pinned: true
+            },
+            'file-explorer': {
+                name: 'File Explorer',
+                icon: 'fas fa-folder',
+                category: 'system',
+                pinned: true
+            },
+            'paint': {
+                name: 'Paint',
+                icon: 'fas fa-paint-brush',
+                category: 'creativity',
+                pinned: false
+            },
+            'camera': {
+                name: 'Camera',
+                icon: 'fas fa-camera',
+                category: 'multimedia',
+                pinned: false
+            },
+            'music': {
+                name: 'Music Player',
+                icon: 'fas fa-music',
+                category: 'multimedia',
+                pinned: false
+            },
+            'weather': {
+                name: 'Weather',
+                icon: 'fas fa-cloud-sun',
+                category: 'lifestyle',
+                pinned: false
+            },
+            'calendar': {
+                name: 'Calendar',
+                icon: 'fas fa-calendar',
+                category: 'productivity',
+                pinned: false
+            },
+            'mail': {
+                name: 'Mail',
+                icon: 'fas fa-envelope',
+                category: 'communication',
+                pinned: false
+            },
+            'photos': {
+                name: 'Photos',
+                icon: 'fas fa-images',
+                category: 'multimedia',
+                pinned: false
+            },
+            'videos': {
+                name: 'Videos',
+                icon: 'fas fa-video',
+                category: 'multimedia',
+                pinned: false
+            },
+            'maps': {
+                name: 'Maps',
+                icon: 'fas fa-map',
+                category: 'navigation',
+                pinned: false
+            },
+            'clock': {
+                name: 'Clock',
+                icon: 'fas fa-clock',
+                category: 'utilities',
+                pinned: false
+            },
+            'terminal': {
+                name: 'Terminal',
+                icon: 'fas fa-terminal',
+                category: 'developer',
+                pinned: false
+            },
+            'store': {
+                name: 'JLAP Store',
+                icon: 'fas fa-shopping-bag',
+                category: 'system',
+                pinned: false
+            },
+            'gaming': {
+                name: 'JLAP Games',
+                icon: 'fas fa-gamepad',
+                category: 'gaming',
+                pinned: false
+            },
+            'chat': {
+                name: 'JLAP Chat',
+                icon: 'fas fa-comments',
+                category: 'communication',
+                pinned: false
+            },
+            'code': {
+                name: 'JLAP Code Editor',
+                icon: 'fas fa-code',
+                category: 'developer',
+                pinned: false
+            }
+        };
+
+        // Initialize OS
+        function initOS() {
+            updateSystemTime();
+            setInterval(updateSystemTime, 1000);
+            populateStartMenu();
+            setupEventListeners();
+        }
+
+        function updateSystemTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const dateString = now.toLocaleDateString([], { month: 'numeric', day: 'numeric', year: 'numeric' });
+            document.getElementById('system-time').innerHTML = `
+                <div class="text-right">
+                    <div>${timeString}</div>
+                    <div class="text-xs opacity-70">${dateString}</div>
+                </div>
+            `;
+        }
+
+        function populateStartMenu() {
+            const pinnedContainer = document.getElementById('pinned-apps');
+            const allAppsContainer = document.getElementById('all-apps');
+            
+            pinnedContainer.innerHTML = '';
+            allAppsContainer.innerHTML = '';
+            
+            Object.entries(apps).forEach(([id, app]) => {
+                const appElement = createAppIcon(id, app);
+                const allAppElement = createAppIcon(id, app);
+                
+                if (app.pinned) {
+                    pinnedContainer.appendChild(appElement);
+                }
+                allAppsContainer.appendChild(allAppElement);
+            });
+        }
+
+        function createAppIcon(id, app) {
+            const element = document.createElement('div');
+            element.className = 'app-icon';
+            element.onclick = () => openApp(id);
+            element.innerHTML = `
+                <i class="${app.icon}"></i>
+                <div class="app-name">${app.name}</div>
+            `;
+            return element;
+        }
+
+        function toggleStartMenu() {
+            const startMenu = document.getElementById('start-menu');
+            startMenuOpen = !startMenuOpen;
+            
+            if (startMenuOpen) {
+                startMenu.classList.add('show');
+                startMenu.style.display = 'block';
+            } else {
+                startMenu.classList.remove('show');
+                setTimeout(() => {
+                    if (!startMenuOpen) {
+                        startMenu.style.display = 'none';
+                    }
+                }, 300);
+            }
+        }
+
+        function openApp(appId) {
+            if (startMenuOpen) {
+                toggleStartMenu();
+            }
+
+            // Check if app is already open
+            for (const [id, window] of activeWindows) {
+                if (window.appId === appId) {
+                    focusWindow(id);
+                    return;
+                }
+            }
+
+            const appConfig = apps[appId];
+            if (!appConfig) return;
+
+            const windowElement = createWindow({
+                id: ++windowId,
+                title: appConfig.name,
+                appId: appId,
+                width: getAppDefaultSize(appId).width,
+                height: getAppDefaultSize(appId).height
+            });
+
+            const content = generateAppContent(appId);
+            windowElement.querySelector('.window-content').innerHTML = content;
+
+            document.getElementById('windows-container').appendChild(windowElement);
+            activeWindows.set(windowId, {
+                element: windowElement,
+                appId: appId,
+                title: appConfig.name
+            });
+
+            updateTaskbar();
+            focusWindow(windowId);
+            
+            // Initialize app-specific functionality
+            initializeApp(appId, windowId);
+        }
+
+        function getAppDefaultSize(appId) {
+            const sizes = {
+                'calculator': { width: 320, height: 480 },
+                'notepad': { width: 600, height: 400 },
+                'browser': { width: 800, height: 600 },
+                'settings': { width: 700, height: 500 },
+                'file-explorer': { width: 750, height: 550 }
+            };
+            return sizes[appId] || { width: 600, height: 400 };
+        }
+
+        function createWindow({ id, title, width, height, appId }) {
+            const window = document.createElement('div');
+            window.className = 'window';
+            window.style.width = width + 'px';
+            window.style.height = height + 'px';
+            window.style.left = Math.random() * 200 + 100 + 'px';
+            window.style.top = Math.random() * 100 + 50 + 'px';
+            window.dataset.windowId = id;
+
+            window.innerHTML = `
+                <div class="window-header" onmousedown="startDrag(${id}, event)">
+                    <div class="window-title">${title}</div>
+                    <div class="window-controls">
+                        <div class="window-control minimize" onclick="minimizeWindow(${id})">
+                            <i class="fas fa-minus"></i>
+                        </div>
+                        <div class="window-control maximize" onclick="toggleMaximize(${id})">
+                            <i class="fas fa-square"></i>
+                        </div>
+                        <div class="window-control close" onclick="closeWindow(${id})">
+                            <i class="fas fa-times"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="window-content"></div>
+            `;
+
+            return window;
+        }
+
+        function generateAppContent(appId) {
+            switch (appId) {
+                case 'calculator':
+                    return `
+                        <div class="calc-display" id="calc-display">0</div>
+                        <div class="calc-buttons">
+                            <div class="calc-btn" onclick="clearCalculator()">C</div>
+                            <div class="calc-btn" onclick="calcInput('±')">±</div>
+                            <div class="calc-btn" onclick="calcInput('%')">%</div>
+                            <div class="calc-btn operator" onclick="calcInput('/')">÷</div>
+                            <div class="calc-btn" onclick="calcInput('7')">7</div>
+                            <div class="calc-btn" onclick="calcInput('8')">8</div>
+                            <div class="calc-btn" onclick="calcInput('9')">9</div>
+                            <div class="calc-btn operator" onclick="calcInput('*')">×</div>
+                            <div class="calc-btn" onclick="calcInput('4')">4</div>
+                            <div class="calc-btn" onclick="calcInput('5')">5</div>
+                            <div class="calc-btn" onclick="calcInput('6')">6</div>
+                            <div class="calc-btn operator" onclick="calcInput('-')">−</div>
+                            <div class="calc-btn" onclick="calcInput('1')">1</div>
+                            <div class="calc-btn" onclick="calcInput('2')">2</div>
+                            <div class="calc-btn" onclick="calcInput('3')">3</div>
+                            <div class="calc-btn operator" onclick="calcInput('+')">+</div>
+                            <div class="calc-btn" onclick="calcInput('0')" style="grid-column: span 2;">0</div>
+                            <div class="calc-btn" onclick="calcInput('.')">.</div>
+                            <div class="calc-btn operator" onclick="calculateResult()">=</div>
+                        </div>
+                    `;
+
+                case 'browser':
+                    return `
+                        <div class="flex items-center gap-2 mb-4">
+                            <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm" onclick="browserBack()">←</button>
+                            <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm" onclick="browserForward()">→</button>
+                            <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm" onclick="browserRefresh()">↻</button>
+                            <input type="text" class="browser-address-bar text-base flex-1" placeholder="Search or enter web address" 
+                                   value="https://www.google.com" onkeypress="handleAddressBar(event)" id="address-bar">
+                        </div>
+                        <div class="browser-content">
+                            <iframe src="https://www.google.com" style="width: 100%; height: 100%; border: none;" id="browser-frame"></iframe>
+                        </div>
+                    `;
+
+                case 'notepad':
+                    return `<textarea class="notepad-editor text-base" placeholder="Start typing..."></textarea>`;
+
+                case 'settings':
+                    return `
+                        <div class="space-y-6">
+                            <h2 class="text-xl font-semibold">Settings</h2>
+                            <div class="space-y-4">
+                                <div class="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                    <h3 class="font-semibold mb-2">Display</h3>
+                                    <button class="px-4 py-2 bg-blue-500 text-white rounded" onclick="toggleTheme()">
+                                        Toggle Dark Mode
+                                    </button>
+                                </div>
+                                <div class="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                    <h3 class="font-semibold mb-2">System</h3>
+                                    <p class="text-sm opacity-70">JLAP OS Version 1.0</p>
+                                    <p class="text-sm opacity-70">Built with HTML, CSS, and JavaScript</p>
+                                </div>
+                                <div class="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                    <h3 class="font-semibold mb-2">About</h3>
+                                    <p class="text-sm opacity-70">A modern web-based operating system by JLAP</p>
+                                    <p class="text-sm opacity-70">Features 20+ functional apps and utilities</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                case 'file-explorer':
+                    return `
+                        <div class="file-explorer">
+                            <div class="file-toolbar">
+                                <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm">Back</button>
+                                <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm">Forward</button>
+                                <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm">Up</button>
+                                <div class="flex-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm">
+                                    C:\\Users\\User
+                                </div>
+                            </div>
+                            <div class="file-list">
+                                <div class="file-item">
+                                    <i class="fas fa-folder text-yellow-500 file-icon"></i>
+                                    <span>Desktop</span>
+                                </div>
+                                <div class="file-item">
+                                    <i class="fas fa-folder text-yellow-500 file-icon"></i>
+                                    <span>Documents</span>
+                                </div>
+                                <div class="file-item">
+                                    <i class="fas fa-folder text-yellow-500 file-icon"></i>
+                                    <span>Downloads</span>
+                                </div>
+                                <div class="file-item">
+                                    <i class="fas fa-folder text-yellow-500 file-icon"></i>
+                                    <span>Pictures</span>
+                                </div>
+                                <div class="file-item">
+                                    <i class="fas fa-folder text-yellow-500 file-icon"></i>
+                                    <span>Music</span>
+                                </div>
+                                <div class="file-item">
+                                    <i class="fas fa-folder text-yellow-500 file-icon"></i>
+                                    <span>Videos</span>
+                                </div>
+                                <div class="file-item">
+                                    <i class="fas fa-file-alt text-blue-500 file-icon"></i>
+                                    <span>sample.txt</span>
+                                </div>
+                                <div class="file-item">
+                                    <i class="fas fa-image text-green-500 file-icon"></i>
+                                    <span>wallpaper.jpg</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                default:
+                    return `
+                        <div class="text-center py-12">
+                            <i class="${apps[appId]?.icon || 'fas fa-app'} text-4xl mb-4 opacity-50"></i>
+                            <h3 class="text-lg font-semibold mb-2">${apps[appId]?.name || 'App'}</h3>
+                            <p class="opacity-70">This app is under development.</p>
+                        </div>
+                    `;
+            }
+        }
+
+        function initializeApp(appId, windowId) {
+            if (appId === 'calculator') {
+                window.currentCalc = '';
+                window.calcDisplay = '0';
+            }
+        }
+
+        // Calculator functions
+        function calcInput(value) {
+            const display = document.getElementById('calc-display');
+            if (!display) return;
+
+            if (window.calcDisplay === '0' && !isNaN(value)) {
+                window.calcDisplay = value;
+            } else {
+                window.calcDisplay += value;
+            }
+            display.textContent = window.calcDisplay;
+        }
+
+        function clearCalculator() {
+            const display = document.getElementById('calc-display');
+            if (!display) return;
+            
+            window.calcDisplay = '0';
+            display.textContent = '0';
+        }
+
+        function calculateResult() {
+            const display = document.getElementById('calc-display');
+            if (!display) return;
+
+            try {
+                const result = eval(window.calcDisplay.replace('×', '*').replace('÷', '/').replace('−', '-'));
+                window.calcDisplay = result.toString();
+                display.textContent = window.calcDisplay;
+            } catch (e) {
+                window.calcDisplay = 'Error';
+                display.textContent = 'Error';
+            }
+        }
+
+        // Window management
+        function startDrag(windowId, event) {
+            const windowElement = activeWindows.get(windowId)?.element;
+            if (!windowElement) return;
+
+            draggedWindow = windowElement;
+            const rect = windowElement.getBoundingClientRect();
+            dragOffset.x = event.clientX - rect.left;
+            dragOffset.y = event.clientY - rect.top;
+
+            focusWindow(windowId);
+        }
+
+        function focusWindow(windowId) {
+            // Reset z-index for all windows
+            activeWindows.forEach((window, id) => {
+                window.element.style.zIndex = id === windowId ? 1000 : 100;
+            });
+        }
+
+        function closeWindow(windowId) {
+            const window = activeWindows.get(windowId);
+            if (window) {
+                window.element.remove();
+                activeWindows.delete(windowId);
+                updateTaskbar();
+            }
+        }
+
+        function minimizeWindow(windowId) {
+            const window = activeWindows.get(windowId);
+            if (window) {
+                window.element.style.display = 'none';
+                window.minimized = true;
+                updateTaskbar();
+            }
+        }
+
+        function toggleMaximize(windowId) {
+            const window = activeWindows.get(windowId);
+            if (window) {
+                window.element.classList.toggle('maximized');
+            }
+        }
+
+        function updateTaskbar() {
+            const taskbarApps = document.getElementById('taskbar-apps');
+            // Add logic to show active apps in taskbar
+        }
+
+        // Event handlers
+        function handleAddressBar(event) {
+            if (event.key === 'Enter') {
+                const url = event.target.value;
+                const iframe = event.target.nextElementSibling.querySelector('iframe');
+                if (iframe) {
+                    try {
+                        iframe.src = url.startsWith('http') ? url : 'https://' + url;
+                    } catch (e) {
+                        console.log('Could not load URL:', url);
+                    }
+                }
+            }
+        }
+
+        function handleSearch(event) {
+            if (event.key === 'Enter') {
+                const query = event.target.value;
+                if (query.trim()) {
+                    openApp('browser');
+                    // You could implement search functionality here
+                }
+            }
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function refreshDesktop() {
+            // Refresh functionality
+            console.log('Desktop refreshed');
+        }
+
+        function showNetworkPanel() {
+            // Show network settings
+            openApp('settings');
+        }
+
+        function setupEventListeners() {
+            // Mouse events for dragging
+            document.addEventListener('mousemove', (event) => {
+                if (draggedWindow) {
+                    const x = event.clientX - dragOffset.x;
+                    const y = event.clientY - dragOffset.y;
+                    draggedWindow.style.left = Math.max(0, x) + 'px';
+                    draggedWindow.style.top = Math.max(0, y) + 'px';
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                draggedWindow = null;
+            });
+
+            // Click outside to close start menu
+            document.addEventListener('click', (event) => {
+                const startMenu = document.getElementById('start-menu');
+                const startButton = document.querySelector('.start-button');
+                
+                if (startMenuOpen && !startMenu.contains(event.target) && !startButton.contains(event.target)) {
+                    toggleStartMenu();
+                }
+            });
+
+            // Right-click context menu
+            document.getElementById('desktop').addEventListener('contextmenu', (event) => {
+                event.preventDefault();
+                const contextMenu = document.getElementById('context-menu');
+                contextMenu.style.left = event.clientX + 'px';
+                contextMenu.style.top = event.clientY + 'px';
+                contextMenu.style.display = 'block';
+            });
+
+            // Hide context menu on click
+            document.addEventListener('click', () => {
+                document.getElementById('context-menu').style.display = 'none';
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (event) => {
+                if (event.ctrlKey) {
+                    switch (event.key) {
+                        case 'r':
+                            event.preventDefault();
+                            refreshDesktop();
+                            break;
+                    }
+                }
+                
+                if (event.key === 'Escape') {
+                    if (startMenuOpen) {
+                        toggleStartMenu();
+                    }
+                }
+            });
+        }
+
+        // Initialize the OS when page loads
+        document.addEventListener('DOMContentLoaded', initOS);
+    </script>
+</body>
+</html>
